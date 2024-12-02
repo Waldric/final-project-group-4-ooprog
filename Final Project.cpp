@@ -329,7 +329,7 @@ int main () {
                 cin >> id;
                 manager.deleteContact(id);
                 break;
-}
+            }
 
             default:
                 cout << "Invalid option. Please try again.\n";
