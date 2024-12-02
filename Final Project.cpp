@@ -69,14 +69,35 @@ public:
 
 class ContactManager {
 private:
+    static ContactManager* instance;
     vector<Contact> contacts;
 
 public:
     ContactManager() = default;
 
+    static ContactManager* getInstance() {
+        if (instance == nullptr) {
+            instance = new ContactManager();
+        }
+        return instance;
+    }
+
+    ContactManager(const ContactManager&) = delete;
+    ContactManager& operator=(const ContactManager&) = delete;
+
     void addContact(string id, string name, string phone, string email, string birthday, string emergencyContact, int age, string address) {
         contacts.push_back(Contact(id, name, phone, email, birthday, emergencyContact, age, address));
         cout << "Contact added successfully!\n";
+    }
+
+    void updateContactCategory(string id, string newCategory) {
+        for (int i = 0; i < contacts.size(); i++) {
+            if (contacts[i].getId() == id) {
+                contacts[i].setCategory(newCategory);
+                cout << "Contact group/category updated successfully!\n";
+                return;
+            }
+        }
     }
 
     void updateContact(string id) {
@@ -102,7 +123,7 @@ public:
                     cout << "[5] Emergency Contact\n";
                     cout << "[6] Age\n";
                     cout << "[7] Address\n";
-                    cout << "[8] Group\n";
+                    cout << "[8] Update Group\n";
                     cout << "[9] Exit\n";
                     cout << "Enter your choice: ";
                     cin >> choiceUpdate;
@@ -160,12 +181,12 @@ public:
                             contacts[i].setAddress(newAddress);
                             break;
                         }
-                        case 8: {
+                            case 8: {
                             string newCategory;
-                            cout << "Enter new Category (Family/Friend): ";
+                            cout << "Enter new Category (Family, Friend, Manager, Client, Vendor): ";
                             cin >> newCategory;
-                            while (newCategory != "Family" && newCategory != "Friend") {
-                                cout << "Invalid category! Please enter 'Family' or 'Friend': ";
+                            while (newCategory != "Family" && newCategory != "Friend" && newCategory != "Manager" && newCategory != "Client" && newCategory != "Vendor") {
+                                cout << "Invalid category! Please enter 'Family', 'Friend', 'Manager', 'Client' or 'Vendor': ";
                                 cin >> newCategory;
                             }
                             contacts[i].setCategory(newCategory);
@@ -225,7 +246,7 @@ int main () {
         cout << "[5] Search\n";
         cout << "[6] Filter\n";
         cout << "[7] Sort\n";
-        cout << "[8] Group\n";
+        cout << "[8] Update Group\n";
         cout << "[9] Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
@@ -290,6 +311,23 @@ int main () {
                 break;
             }
 
+            case 8: {
+                string id;
+                cout << "Enter Contact ID to update the group: ";
+                cin >> id;
+
+                string newCategory;
+                cout << "Enter the new group/category (Family, Friend, Manager, Client, Vendor): ";
+                cin >> newCategory;
+
+                while (newCategory != "Family" && newCategory != "Friend" && newCategory != "Manager" && newCategory != "Client" && newCategory != "Vendor") {
+                    cout << "Invalid category! Please enter 'Family', 'Friend', 'Manager', 'Client', or 'Vendor': ";
+                    cin >> newCategory;
+                }
+
+                manager.updateContactCategory(id, newCategory);
+                break;
+            }
             default:
                 cout << "Invalid option. Please try again.\n";
                 break;
