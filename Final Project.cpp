@@ -79,6 +79,26 @@ public:
         cout << "Contact added successfully!\n";
     }
 
+    void viewContacts(){
+        if(contacts.empty()){
+            cout << "No contacts available.\n";
+            return;
+        }
+        cout << "\n=== Contact List ===\n";
+            for (size_t i = 0; i < contacts.size(); ++i) {
+                Contact contact = contacts[i]; 
+                cout << "ID: " << contact.getId() << "\n";
+                cout << "Name: " << contact.getName() << "\n";
+                cout << "Phone: " << contact.getPhone() << "\n";
+                cout << "Email: " << contact.getEmail() << "\n";
+                cout << "Birthday: " << contact.getBirthday() << "\n";
+                cout << "Emergency Contact: " << contact.getEmergencyContact() << "\n";
+                cout << "Age: " << contact.getAge() << "\n";
+                cout << "Address: " << contact.getAddress() << "\n";
+                cout << "Category: " << contact.getCategory() << "\n";
+                cout << "-----------------------\n"; 
+            }       
+        }
     void updateContact(string id) {
         for (int i = 0; i < contacts.size(); i++) {
             if (contacts[i].getId() == id) {
@@ -184,10 +204,22 @@ public:
                 cout << "Contact updated successfully!\n";
                 return;
             }
+            
         }
         cout << "Contact with ID " << id << " not found!\n";
     }
+    void deleteContact(string id) {
+        for (size_t i = 0; i < contacts.size(); i++) {
+            if (contacts[i].getId() == id) {
+                contacts.erase(contacts.begin() + i);
+                cout << "Contact with ID " << id << " has been deleted successfully!\n";
+                return;
+            }
+        }
+    cout << "Contact with ID " << id << " not found!\n";
+}
 };
+
 
 bool isValidAge(int age) {
     return age > 0;
@@ -278,7 +310,8 @@ int main () {
                 break;
             }
 
-            case 2: {   
+            case 2: {
+                manager.viewContacts();   
                 break;
             }
 
@@ -289,6 +322,14 @@ int main () {
                 manager.updateContact(id);
                 break;
             }
+            case 4: {
+                
+                string id;
+                cout << "Enter Contact ID to delete: ";
+                cin >> id;
+                manager.deleteContact(id);
+                break;
+}
 
             default:
                 cout << "Invalid option. Please try again.\n";
