@@ -68,10 +68,9 @@ public:
 };
 
 class ContactManager {
-private:
-    vector<Contact> contacts;
-
 public:
+
+    vector<Contact> contacts;
     ContactManager() = default;
 
     void addContact(string id, string name, string phone, string email, string birthday, string emergencyContact, int age, string address) {
@@ -85,18 +84,22 @@ public:
             return;
         }
         cout << "\n=== Contact List ===\n";
+        cout << left << setw(10) << "ID" 
+             << setw(20) << "Name" << setw(15) << "Phone" 
+             << setw(25) << "Email" << setw(10) << "Age" 
+             << setw(15) << "Category" << setw(30) << "Address" << "\n";
+        cout << string(125, '-') << "\n";
+       
             for (size_t i = 0; i < contacts.size(); ++i) {
                 Contact contact = contacts[i]; 
-                cout << "ID: " << contact.getId() << "\n";
-                cout << "Name: " << contact.getName() << "\n";
-                cout << "Phone: " << contact.getPhone() << "\n";
-                cout << "Email: " << contact.getEmail() << "\n";
-                cout << "Birthday: " << contact.getBirthday() << "\n";
-                cout << "Emergency Contact: " << contact.getEmergencyContact() << "\n";
-                cout << "Age: " << contact.getAge() << "\n";
-                cout << "Address: " << contact.getAddress() << "\n";
-                cout << "Category: " << contact.getCategory() << "\n";
-                cout << "-----------------------\n"; 
+                cout << left << setw(10) << contact.getId()
+                     << setw(20) << contact.getName()
+                     << setw(15) << contact.getPhone()
+                     << setw(25) << contact.getEmail()
+                     << setw(10) << contact.getAge()
+                     << setw(15) << contact.getCategory()
+                     << setw(30) << contact.getAddress() << "\n";
+                
             }       
         }
     void updateContact(string id) {
@@ -218,6 +221,92 @@ public:
         }
     cout << "Contact with ID " << id << " not found!\n";
 }
+
+    void searchContact() {
+        int searchChoice;
+        cout << "\nSelect the attribute to search by:\n";
+        cout << "[1] Search by ID\n";
+        cout << "[2] Search by Name\n";
+        cout << "[3] Search by Phone\n";
+        cout << "Enter your choice: ";
+        cin >> searchChoice;
+        cin.ignore();  
+
+        string searchTerm;
+        switch (searchChoice) {
+            case 1: {
+                cout << "Enter Contact ID to search: ";
+                getline(cin, searchTerm);
+                bool found = false;
+                for (auto& contact : contacts) {
+                    if (contact.getId() == searchTerm) {
+                        displayContact(contact);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    cout << "Contact with ID " << "'" << searchTerm  << "'" << " not found.\n";
+                }
+                break;
+            }
+            case 2: {
+                cout << "Enter Contact Name to search: ";
+                getline(cin, searchTerm);
+                bool found = false;
+                for (auto& contact : contacts) {
+                    if (contact.getName() == searchTerm) {
+                        displayContact(contact);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    cout << "Contact with Name " << "'" << searchTerm  << "'" << " not found.\n";
+                }
+                break;
+            }
+            case 3: {
+                cout << "Enter Contact Phone to search: ";
+                getline(cin, searchTerm);
+                bool found = false;
+                for (auto& contact : contacts) {
+                    if (contact.getPhone() == searchTerm) {
+                        displayContact(contact);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    cout << "Contact with Phone " << "'" << searchTerm  << "'" << " not found.\n";
+                }
+                break;
+            }
+            default:
+                cout << "Invalid choice. Please try again.\n";
+                break;
+        }
+    }
+
+    void displayContact(Contact& contact) {        // for single display only (when searching contacts)
+        cout << "\nContact Found!\n";
+        cout << left << setw(10) << "ID" 
+             << setw(20) << "Name" << setw(15) << "Phone" 
+             << setw(25) << "Email" << setw(10) << "Age" 
+             << setw(15) << "Category" << setw(30) << "Address" << "\n";
+        cout << string(125, '-') << "\n";
+        cout << left << setw(10) << contact.getId()
+             << setw(20) << contact.getName()
+             << setw(15) << contact.getPhone()
+             << setw(25) << contact.getEmail()
+             << setw(10) << contact.getAge()
+             << setw(15) << contact.getCategory()
+             << setw(30) << contact.getAddress() << "\n";
+    }
+
+
+
+
 };
 
 
@@ -243,6 +332,115 @@ bool isValidAgeInput(int& age) {
         }
     }
 }
+
+// ======================================Sorting Section==============================================
+
+class SortStrategy : public ContactManager {
+public:
+    virtual void sort(vector<Contact>& contacts) const = 0;
+    virtual ~SortStrategy() = default;
+};
+
+class SortByNameAscending : public SortStrategy {
+public:
+   void sort(vector<Contact>& contacts) const override {   // Bubble Sort
+        for (size_t i = 0; i < contacts.size() - 1; ++i) {
+            for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
+                if (contacts[j].getName() > contacts[j + 1].getName()) {
+                    swap(contacts[j], contacts[j + 1]);
+                }
+            }
+        }
+    }
+};
+
+class SortByNameDescending : public SortStrategy {
+public:
+    void sort(vector<Contact>& contacts) const override {
+        for (size_t i = 0; i < contacts.size() - 1; ++i) {
+            for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
+                if (contacts[j].getName() < contacts[j + 1].getName()) {
+                    swap(contacts[j], contacts[j + 1]);
+                }
+            }
+        }
+    }
+};
+
+class SortByAgeAscending : public SortStrategy {
+public:
+    void sort(vector<Contact>& contacts) const override {
+        for (size_t i = 0; i < contacts.size() - 1; ++i) {
+            for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
+                if (contacts[j].getAge() > contacts[j + 1].getAge()) {
+                    swap(contacts[j], contacts[j + 1]);
+                }
+            }
+        }
+    }
+
+};
+
+class SortByAgeDescending : public SortStrategy {
+public:
+    void sort(vector<Contact>& contacts) const override {
+        for (size_t i = 0; i < contacts.size() - 1; ++i) {
+            for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
+                if (contacts[j].getAge() < contacts[j + 1].getAge()) {
+                    swap(contacts[j], contacts[j + 1]);
+                }
+            }
+        }
+    }
+};
+
+class SortByIdAscending : public SortStrategy {
+public:
+    void sort(vector<Contact>& contacts) const override {
+        for (size_t i = 0; i < contacts.size() - 1; ++i) {
+            for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
+                if (contacts[j].getId() > contacts[j + 1].getId()) {
+                    swap(contacts[j], contacts[j + 1]);
+                }
+            }
+        }
+    }
+};
+
+class SortByIdDescending : public SortStrategy {
+public:
+    void sort(vector<Contact>& contacts) const override {
+        for (size_t i = 0; i < contacts.size() - 1; ++i) {
+            for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
+                if (contacts[j].getId() < contacts[j + 1].getId()) {
+                    swap(contacts[j], contacts[j + 1]);
+                }
+            }
+        }
+    }
+};
+
+class SortContacts {
+private:
+    SortStrategy* strategy;
+
+public:
+    void setStrategy(SortStrategy& newStrategy) {
+        strategy = &newStrategy;
+    }
+
+    void sort(vector<Contact>& contacts) {
+        if (strategy) {
+            strategy->sort(contacts);
+            cout << "Contacts sorted successfully!\n";
+        } else {
+            cout << "No sorting strategy set.\n";
+        }
+    }
+};
+
+// ===========================================End=================================================
+
 
 int main () {
     ContactManager manager;
@@ -329,7 +527,63 @@ int main () {
                 cin >> id;
                 manager.deleteContact(id);
                 break;
-}
+            }
+
+            case 5: {
+
+                manager.searchContact();
+                break;
+            }
+
+            case 7: {
+
+                vector<Contact> contacts;
+                SortContacts sorting;
+                SortByNameAscending nameAsc;
+                SortByNameDescending nameDesc;
+                SortByAgeAscending ageAsc;
+                SortByAgeDescending ageDesc;
+                SortByIdAscending idAsc;
+                SortByIdDescending idDesc;
+                int sortOption, order;
+
+                    cout << "[1] Sort By Name " << endl;
+                    cout << "[2] Sort By Age " << endl;
+                    cout << "[3] Sort By ID " << endl;
+                    cout << "Enter your choice: ";
+                    cin >> sortOption;
+
+                    cout << "Do you want to sort in:" << endl;
+                    cout << "[1] Ascending Order " << endl;
+                    cout << "[2] Descending Order " << endl;
+                    cout << "Enter sorting order: ";
+                    cin >> order;
+
+                    if (sortOption == 1 && order == 1) {
+                        sorting.setStrategy(nameAsc);
+                    } else if (sortOption == 1 && order == 2) {
+                        sorting.setStrategy(nameDesc);
+                    } else if (sortOption == 2 && order == 1) {
+                        sorting.setStrategy(ageAsc);
+                    } else if (sortOption == 2 && order == 2) {
+                        sorting.setStrategy(ageDesc);
+                    } else if (sortOption == 3 && order == 1) {
+                        sorting.setStrategy(idAsc);
+                    } else if (sortOption == 3 && order == 2) {
+                        sorting.setStrategy(idDesc);
+                    } else {
+                        cout << "invalid input! please try again. " << endl;
+                    }
+
+                    sorting.sort(manager.contacts);
+                    manager.viewContacts();
+                    break;
+             
+            }
+            case 9: {
+                cout << "Exiting Contact Management System..." << endl;
+                break;
+            }
 
             default:
                 cout << "Invalid option. Please try again.\n";
@@ -337,4 +591,6 @@ int main () {
         }
 
     } while (choice != 9);
+
+    return 0;
 }
