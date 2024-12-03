@@ -246,14 +246,23 @@ bool isValidId(const string& id) {
             case 2: {
                 cout << "Enter Contact Name to search: ";
                 getline(cin, searchTerm);
+
+
+                transform(searchTerm.begin(), searchTerm.end(), searchTerm.begin(), ::tolower);
+
                 bool found = false;
                 for (auto& contact : contacts) {
-                    if (contact.getName() == searchTerm) {
-                        displayContact(contact);
-                        found = true;
-                        break;
-                    }
-                }
+                     string contactName = contact.getName();
+    
+   
+                transform(contactName.begin(), contactName.end(), contactName.begin(), ::tolower);
+    
+                if (contactName == searchTerm) { 
+                    displayContact(contact);
+                      found = true;
+                       break;
+                           }
+                              }
                 if (!found) {
                     cout << "Contact with Name " << "'" << searchTerm  << "'" << " not found.\n";
                 }
@@ -994,7 +1003,7 @@ int main() {
                     SortByEmailDescending emailDesc;
                     int sortOption, order;
                     do {
-                        cout << "[1] Sort By Name " << endl;
+                        cout << "\n[1] Sort By Name " << endl;
                         cout << "[2] Sort By Age " << endl;
                         cout << "[3] Sort By ID " << endl;
                         cout << "[4] Sort By Email " << endl;
