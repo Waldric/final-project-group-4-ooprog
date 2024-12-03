@@ -7,6 +7,12 @@
 #include <stdexcept>
 using namespace std;
 
+string toLower(const string& str) {
+    string result = str;
+    transform(result.begin(), result.end(), result.begin(), ::tolower);
+    return result;
+}
+
 class Contact {
 protected:
     string id;
@@ -41,6 +47,7 @@ public:
     void setAge(int newAge) { age = newAge; }
     void setAddress(string newAddress) { address = newAddress; }
     void setCategory(string newCategory) { category = newCategory; }
+
 };
 
 class User {
@@ -65,7 +72,7 @@ public:
 
 class Guest : public User {
 public:
-    Guest(string username, string password) : User(username, password, "NormalUser") {}
+    Guest(string username, string password) : User(username, password, "Guest") {}
 };
 
 class ContactManager {
@@ -95,7 +102,9 @@ bool isValidBirthday(const string& birthday) {
     }
     return true;
 }
-
+bool isEmpty() {
+        return contacts.empty();
+}
 bool isValidAgeInput(int& age) {
     while (true) {
         cin >> age;
@@ -115,6 +124,10 @@ bool isValidInput(const string& input) {
     return !input.empty();
 }
 
+bool isValidId(const string& id) {
+        return !id.empty() && all_of(id.begin(), id.end(), ::isdigit);
+    }
+
     bool isIdExist(const string& id) const {
         for (const Contact& contact : contacts) { 
             if (contact.getId() == id) {
@@ -124,6 +137,10 @@ bool isValidInput(const string& input) {
         return false;
     }
 
+    bool isValidNonNegativePhone(const string& phone) {
+        return !phone.empty() && phone.find_first_not_of("0123456789") == string::npos;
+    }
+    
     ContactManager() = default;
 
     static ContactManager* getInstance() {
@@ -182,13 +199,20 @@ bool isValidInput(const string& input) {
 
     void searchContact() {
         int searchChoice;
+        do {
         cout << "\nSelect the attribute to search by:\n";
         cout << "[1] Search by ID\n";
         cout << "[2] Search by Name\n";
         cout << "[3] Search by Phone\n";
         cout << "Enter your choice: ";
         cin >> searchChoice;
-        cin.ignore();  
+        if (cin.fail() || searchChoice <= 0 || searchChoice >= 4){
+            cin.clear();
+            cin.ignore(512, '\n');
+            cout << "Invalid Input. Please Try Again\n" << endl;
+        }
+        } while (searchChoice <= 0 || searchChoice >= 4);
+        cin.ignore();
 
         string searchTerm;
         switch (searchChoice) {
@@ -247,34 +271,48 @@ bool isValidInput(const string& input) {
     }
 
     void updateContactCategory(string id, string newCategory) {
-        try {
-            bool found = false;
-            for (int i = 0; i < contacts.size(); i++) {
-                if (contacts[i].getId() == id) {
-                    contacts[i].setCategory(newCategory);
-                    found = true;
-                    cout << "Contact group/category updated successfully!\n";
-                    break;
-                }
-            }
-            if (!found) {
-                throw invalid_argument("Contact with ID " + id + " not found!");
-            }
-        }
-        catch (const invalid_argument& e) {
-            cout << "Error: " << e.what() << endl;
-        }
+    if (contacts.empty()) {
+        cout << "No contacts available to update categories.\n";
+        return;
     }
 
+    try {
+        bool found = false;
+        for (int i = 0; i < contacts.size(); i++) {
+            if (toLower(contacts[i].getId()) == toLower(id)) {
+                contacts[i].setCategory(newCategory);
+                found = true;
+                cout << "Contact group/category updated successfully!\n";
+                break;
+            }
+        }
+        if (!found) {
+            throw invalid_argument("Contact with ID " + id + " not found!");
+        }
+    } catch (const invalid_argument& e) {
+        cout << "Error: " << e.what() << endl;
+    }
+}
+
     void updateContact(string id) {
-        try {
-            bool found = false;
-            for (size_t i = 0; i < contacts.size(); i++) {
-                if (contacts[i].getId() == id) {
-                    found = true;
-                    int choiceUpdate;
-                    do {
-                        cout << "\nCurrent contact details:\n";
+    if (contacts.empty()) {
+        cout << "No contacts available to update.\n";
+        return;
+    }
+
+    try {
+        bool found = false;
+
+        if (!isValidId(id)) {
+                throw invalid_argument("Invalid ID! ID must be a non-negative number.");
+        }
+
+        for (size_t i = 0; i < contacts.size(); i++) {
+            if (toLower(contacts[i].getId()) == toLower(id)) {
+                found = true;
+                int choiceUpdate;
+                do {
+                    cout << "\nCurrent contact details:\n";
                     cout << "Name: " << contacts[i].getName() << "\n";
                     cout << "Phone: " << contacts[i].getPhone() << "\n";
                     cout << "Email: " << contacts[i].getEmail() << "\n";
@@ -282,7 +320,7 @@ bool isValidInput(const string& input) {
                     cout << "Emergency Contact: " << contacts[i].getEmergencyContact() << "\n";
                     cout << "Age: " << contacts[i].getAge() << "\n";
                     cout << "Address: " << contacts[i].getAddress() << "\n";
-                    cout << "Category: " << contacts[i].getCategory() << "\n"; 
+                    cout << "Category: " << contacts[i].getCategory() << "\n";
 
                     cout << "\nWhat do you want to update?\n";
                     cout << "[1] Name\n";
@@ -318,7 +356,7 @@ bool isValidInput(const string& input) {
                                 cout << "Enter new Phone Number (11 digits): ";
                                 getline(cin, newPhone);
                                 if (!isValidPhoneNumber(newPhone)) {
-                                    cout << "Invalid phone number! Please enter a 11-digit phone number: ";
+                                    cout << "Invalid phone number! Please enter an 11-digit phone number: ";
                                 }
                             } while (!isValidPhoneNumber(newPhone));
                             contacts[i].setPhone(newPhone);
@@ -359,11 +397,35 @@ bool isValidInput(const string& input) {
                             } while (newEmergencyContact.empty());
                             contacts[i].setEmergencyContact(newEmergencyContact);
                             break;
+
+                            while (!isValidNonNegativePhone(newEmergencyContact)) {
+                            cout << "Invalid emergency contact number! Please enter a valid non-negative number: ";
+                            getline(cin, newEmergencyContact);
+                            if (!isValidPhoneNumber(newEmergencyContact)) {
+                                cout << "Invalid number! Please enter exactly 11 digits." << endl;
+                            }
+                            }
                         }
                         case 6: {
                             int newAge;
                             do {
-                                cout << "Enter new Age: ";
+                                cout << "Enter your Age: ";
+                                while (true) {
+    
+                                    if (isValidAgeInput(newAge) && newAge > 0 && newAge <= 150) {
+                                        break; 
+                                    } else if (newAge < 1) {
+                                        cout << "Invalid age! Please enter a valid age (positive integer): ";
+                                        cin >> newAge;
+                                    } else if (newAge > 150) {
+                                        cout << "Age must be below 150. Please try again." << endl;
+                                        cout << "Enter your Age: ";
+                                        cin >> newAge; 
+                                    } else {
+                                        cout << "Invalid input! Please enter a valid age: ";
+                                        cin >> newAge; 
+                                    }
+                                }
                             } while (!isValidAgeInput(newAge));
                             contacts[i].setAge(newAge);
                             break;
@@ -384,7 +446,9 @@ bool isValidInput(const string& input) {
                             string newCategory;
                             cout << "Enter new Category (Family, Friend, Manager, Client, Vendor): ";
                             cin >> newCategory;
-                            while (newCategory != "Family" && newCategory != "Friend" && newCategory != "Manager" && newCategory != "Client" && newCategory != "Vendor") {
+                            while (toLower(newCategory) != "family" && toLower(newCategory) != "friend" &&
+                                   toLower(newCategory) != "manager" && toLower(newCategory) != "client" &&
+                                   toLower(newCategory) != "vendor") {
                                 cout << "Invalid category! Please enter 'Family', 'Friend', 'Manager', 'Client', or 'Vendor': ";
                                 cin >> newCategory;
                             }
@@ -404,16 +468,19 @@ bool isValidInput(const string& input) {
                 return;
             }
         }
-            if (!found) {
-                throw invalid_argument("Contact with the given ID does not exist.");
-            }
+        if (!found) {
+            throw invalid_argument("Contact with the given ID does not exist.");
         }
-        catch (const invalid_argument& e) {
-            cout << "Error: " << e.what() << endl;
-        }
+    } catch (const invalid_argument& e) {
+        cout << "Error: " << e.what() << endl;
     }
+}
     
     void deleteContact(string id) {
+        if (contacts.empty()) {
+            cout << "No available contacts to delete.\n";
+            return;
+        }
         try {
             for (size_t i = 0; i < contacts.size(); i++) {
                 if (contacts[i].getId() == id) {
@@ -428,59 +495,72 @@ bool isValidInput(const string& input) {
             cout << "Error: " << e.what() << endl;
         }
     }
+    
 void filterContacts() {
-    if (contacts.empty()) {
-        cout << "No contacts available to filter.\n";
-        return;
-    }
-
-    int filterChoice;
-    cout << "\n=== Filter Contacts ===\n";
-    cout << "[1] Name\n";
-    cout << "[2] Phone\n";
-    cout << "[3] Email\n";
-    cout << "[4] Birthday\n";
-    cout << "[5] Emergency Contact\n";
-    cout << "[6] Age\n";
-    cout << "[7] Address\n";
-    cout << "[8] Category\n";
-    cout << "Enter your choice: ";
-    cin >> filterChoice;
-
-    cout << "\n=== Filtered Contacts ===\n";
-    for (size_t i = 0; i < contacts.size(); ++i) {
-        Contact contact = contacts[i];  
-
-        switch (filterChoice) {
-            case 1:
-                cout << "Name: " << contact.getName() << "\n";
-                break;
-            case 2:
-                cout << "Phone: " << contact.getPhone() << "\n";
-                break;
-            case 3:
-                cout << "Email: " << contact.getEmail() << "\n";
-                break;
-            case 4:
-                cout << "Birthday: " << contact.getBirthday() << "\n";
-                break;
-            case 5:
-                cout << "Emergency Contact: " << contact.getEmergencyContact() << "\n";
-                break;
-            case 6:
-                cout << "Age: " << contact.getAge() << "\n";
-                break;
-            case 7:
-                cout << "Address: " << contact.getAddress() << "\n";
-                break;
-            case 8:
-                cout << "Category: " << contact.getCategory() << "\n";
-                break;
-            default:
-                cout << "Invalid choice.\n";
-                return;
+        if (contacts.empty()) {
+            cout << "No contacts available to filter.\n";
+            return;
         }
-        cout << "-----------------------\n"; 
+
+        int filterChoice;
+        bool validInput = false;
+
+        cout << "\n=== Filter Contacts ===\n";
+        cout << "[1] Name\n";
+        cout << "[2] Phone\n";
+        cout << "[3] Email\n";
+        cout << "[4] Birthday\n";
+        cout << "[5] Emergency Contact\n";
+        cout << "[6] Age\n";
+        cout << "[7] Address\n";
+        cout << "[8] Category\n";
+
+        while (!validInput) {
+            cout << "Enter your choice: ";
+            if (cin >> filterChoice && filterChoice >= 1 && filterChoice <= 8) {
+                validInput = true;
+            } 
+            else {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "Invalid input. Please enter number corresponding to what you want to filter.\n";
+            }
+        }
+
+        cout << "\n=== Filtered Contacts ===\n";
+        for (size_t i = 0; i < contacts.size(); ++i) {
+            Contact contact = contacts[i];
+
+            switch (filterChoice) {
+                case 1:
+                    cout << "Name: " << contact.getName() << "\n";
+                    break;
+                case 2:
+                    cout << "Phone: " << contact.getPhone() << "\n";
+                    break;
+                case 3:
+                    cout << "Email: " << contact.getEmail() << "\n";
+                    break;
+                case 4:
+                    cout << "Birthday: " << contact.getBirthday() << "\n";
+                    break;
+                case 5:
+                    cout << "Emergency Contact: " << contact.getEmergencyContact() << "\n";
+                    break;
+                case 6:
+                    cout << "Age: " << contact.getAge() << "\n";
+                    break;
+                case 7:
+                    cout << "Address: " << contact.getAddress() << "\n";
+                    break;
+                case 8:
+                    cout << "Category: " << contact.getCategory() << "\n";
+                    break;
+                default:
+                    cout << "Invalid choice.\n";
+                    return;
+            }
+            cout << "-----------------------\n";
         }
     }
 };
@@ -586,11 +666,75 @@ public:
 };
 
 class SortByIdAscending : public SortStrategy {
+private:
+    void quickSort(vector<Contact>& contacts, int low, int high) const {
+        if (low < high) {
+            int pi = partition(contacts, low, high);
+            quickSort(contacts, low, pi - 1);
+            quickSort(contacts, pi + 1, high);
+        }
+    }
+
+    int partition(vector<Contact>& contacts, int low, int high) const {
+        int pivot = std::stoi(contacts[high].getId()); 
+        int i = low - 1;
+
+        for (int j = low; j < high; ++j) {
+            if (std::stoi(contacts[j].getId()) <= pivot) {
+                ++i;
+                swap(contacts[i], contacts[j]);
+            }
+        }
+        swap(contacts[i + 1], contacts[high]);
+        return i + 1;
+    }
+
+public:
+    void sort(vector<Contact>& contacts) const override {
+        if (!contacts.empty()) {
+            quickSort(contacts, 0, contacts.size() - 1);
+        }
+    }
+};
+
+class SortByIdDescending : public SortStrategy {
+private:
+    void quickSort(vector<Contact>& contacts, int low, int high) const {
+        if (low < high) {
+            int pi = partition(contacts, low, high);
+            quickSort(contacts, low, pi - 1);
+            quickSort(contacts, pi + 1, high);
+        }
+    }
+
+    int partition(vector<Contact>& contacts, int low, int high) const {
+        int pivot = std::stoi(contacts[high].getId()); 
+        int i = low - 1;
+
+        for (int j = low; j < high; ++j) {
+            if (std::stoi(contacts[j].getId()) >= pivot) { 
+                ++i;
+                swap(contacts[i], contacts[j]);
+            }
+        }
+        swap(contacts[i + 1], contacts[high]);
+        return i + 1;
+    }
+
+public:
+    void sort(vector<Contact>& contacts) const override {
+        if (!contacts.empty()) {
+            quickSort(contacts, 0, contacts.size() - 1);
+        }
+    }
+};
+
+class SortByEmailAscending : public SortStrategy {
 public:
     void sort(vector<Contact>& contacts) const override {
         for (size_t i = 0; i < contacts.size() - 1; ++i) {
             for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
-                if (contacts[j].getId() > contacts[j + 1].getId()) {
+                if (contacts[j].getEmail() > contacts[j + 1].getEmail()) {
                     swap(contacts[j], contacts[j + 1]);
                 }
             }
@@ -598,12 +742,12 @@ public:
     }
 };
 
-class SortByIdDescending : public SortStrategy {
+class SortByEmailDescending : public SortStrategy {
 public:
     void sort(vector<Contact>& contacts) const override {
         for (size_t i = 0; i < contacts.size() - 1; ++i) {
             for (size_t j = 0; j < contacts.size() - i - 1; ++j) {
-                if (contacts[j].getId() < contacts[j + 1].getId()) {
+                if (contacts[j].getEmail() < contacts[j + 1].getEmail()) {
                     swap(contacts[j], contacts[j + 1]);
                 }
             }
@@ -631,6 +775,7 @@ public:
 };
 
 int main() {
+    
     ContactManager manager;
 
     while (true) {
@@ -639,6 +784,7 @@ int main() {
         cout << "\n=== Login ===\n";
         cout << "[1] Login as User\n";
         cout << "[2] Login as Guest\n";
+        cout << "[3] Exit System\n";
         cout << "Choose an option: ";
         int loginChoice;
         cin >> loginChoice;
@@ -649,9 +795,12 @@ int main() {
         } else if (loginChoice == 2) {
             role = "Guest";
             cout << "Logged in as Guest. Limited access granted.\n";
-        } else {
-            cout << "Invalid choice. Exiting program.\n";
+        } else if (loginChoice == 3) {
+            cout << "Exiting program. Goodbye!\n";
             return 0;
+        } else {
+            cout << "Invalid choice. Please try again.\n";
+            continue;
         }
 
         int choice;
@@ -667,7 +816,7 @@ int main() {
                 cout << "[7] Sort\n";
                 cout << "[8] Update Group\n";
                 cout << "[9] Logout\n";
-            } else { 
+            } else {
                 cout << "[1] View Contacts\n";
                 cout << "[2] Search\n";
                 cout << "[3] Filter\n";
@@ -677,87 +826,166 @@ int main() {
             cin >> choice;
 
             try {
-                if (role == "User") {
-                    switch (choice) {
-                        case 1: {
-                            string id, name, phone, email, birthday, emergencyContact, address;
-                            int age;
-                            cout << "Enter your ID: ";
-                            cin >> id;
-                            if (manager.isIdExist(id)) {
-                                throw invalid_argument("ID already exists. Please use another ID.");
-                            }
-                            cout << "Enter your Age: ";
-                            isValidAgeInput(age);
-                            cin.ignore();
-                            do {
-                                cout << "Enter your Name: ";
-                                getline(cin, name);
-                            } while (!isValidInput(name));
-                            do {
-                                cout << "Enter your Phone Number (11 digits): ";
-                                getline(cin, phone);
-                            } while (!isValidPhoneNumber(phone));
-                            do {
-                                cout << "Enter your Email (must contain '@'): ";
-                                getline(cin, email);
-                            } while (!isValidEmail(email));
-                            do {
-                                cout << "Enter your Birthday (MM/DD/YYYY): ";
-                                getline(cin, birthday);
-                            } while (!isValidBirthday(birthday));
-                            cout << "Enter your Emergency Contact: ";
-                            getline(cin, emergencyContact);
-                            cout << "Enter your Address: ";
-                            getline(cin, address);
-                            manager.addContact(id, name, phone, email, birthday, emergencyContact, age, address);
-                            break;
-                        }
-                        case 2:
-                            manager.viewContacts();
-                            break;
-                        case 3: {
-                            string id;
-                            cout << "Enter Contact ID to update: ";
-                            cin >> id;
-                            manager.updateContact(id);
-                            break;
-                        }
-                        case 4: {
-                            string id;
-                            cout << "Enter Contact ID to delete: ";
-                            cin >> id;
-                            manager.deleteContact(id);
-                            break;
-                        }
-                        case 5:
-                            manager.searchContact();
-                            break;
-                        case 6:
-                            manager.filterContacts();
-                            break;
-                        case 7: {
-                            vector<Contact> contacts;
-                            SortContacts sorting;
-                            SortByNameAscending nameAsc;
-                            SortByNameDescending nameDesc;
-                            SortByAgeAscending ageAsc;
-                            SortByAgeDescending ageDesc;
-                            SortByIdAscending idAsc;
-                            SortByIdDescending idDesc;
-                            int sortOption, order;
+    if (role == "User") {
+        switch (choice) {
+            case 1: {
+                string id, name, phone, email, birthday, emergencyContact, address;
+                int age;
+                cout << "Enter your ID: ";
+                cin >> id;
+                if (manager.isIdExist(id)) {
+                    throw invalid_argument("ID already exists. Please use another ID.");
+                }
+                cout << "Enter your Age: ";
+                while (true) {
+    
+                    if (isValidAgeInput(age) && age > 0 && age <= 150) {
+                    break; 
+                    } else if (age < 1) {
+                        cout << "Invalid age! Please enter a valid age (positive integer): ";
+                    cin >> age;
+                    } else if (age > 150) {
+                        cout << "Age must be below 150. Please try again." << endl;
+                        cout << "Enter your Age: ";
+                        cin >> age; 
+                    } else {
+                        cout << "Invalid input! Please enter a valid age: ";
+                        cin >> age; 
+                    }
+                }
 
-                            cout << "[1] Sort By Name " << endl;
-                            cout << "[2] Sort By Age " << endl;
-                            cout << "[3] Sort By ID " << endl;
-                            cout << "Enter your choice: ";
-                            cin >> sortOption;
+                cin.ignore();
+                
+                do {
+                cout << "Enter your Name: ";
+                getline(cin, name);
+                if (name.empty()) {
+                    cout << "Name cannot be empty. Please enter a valid name." << endl;
+                }
+                } while (name.empty());
+                do {
+                cout << "Enter your Phone Number (11 digits): ";
+                getline(cin, phone);
+                if (!isValidPhoneNumber(phone)) {
+                    cout << "Invalid phone number! Please enter exactly 11 digits." << endl;
+                }
+                } while (!isValidPhoneNumber(phone));
+                do {
+                cout << "Enter your Email (must contain '@'): ";
+                getline(cin, email);
+                if (!isValidEmail(email)) {
+                    cout << "Invalid email! Please enter a valid email address containing '@'." << endl;
+                }
+                } while (!isValidEmail(email));
+                do {
+                cout << "Enter your Birthday (MM/DD/YYYY): ";
+                getline(cin, birthday);
+                if (!isValidBirthday(birthday)) {
+                    cout << "Invalid birthday format! Please enter a valid birthday (MM/DD/YYYY)." << endl;
+                }
+                } while (!isValidBirthday(birthday));
+                
+                do {
+                cout << "Enter your Emergency Contact (11 digits): ";
+                while (true) {
+                getline(cin, emergencyContact);
+                if (!isValidPhoneNumber(emergencyContact)) {
+                    cout << "Invalid number! Please enter exactly 11 digits." << endl;
+                }
+                if (emergencyContact.empty()) {
+                    cout << "Emergency contact cannot be empty. Please enter a valid contact: ";
+                } else {
+                    break;
+                }
+                }
+                } while (!isValidPhoneNumber(emergencyContact));
 
+                
+                do {
+                cout << "Enter your Address: ";
+                getline(cin, address);
+                if (address.empty()) {
+                    cout << "Address cannot be empty. Please enter a valid address: ";
+                }
+                } while (address.empty());
+                manager.addContact(id, name, phone, email, birthday, emergencyContact, age, address);
+            break;
+            }
+            case 2:
+                manager.viewContacts();
+                break;
+            case 3:
+                if (manager.contacts.empty()) {
+                    cout << "There are no available contacts in the system.\n";
+                } else {
+                    string id;
+                    cout << "Enter Contact ID to update: ";
+                    cin >> id;
+                    manager.updateContact(id);
+                }
+                break;
+            case 4:
+                if (manager.contacts.empty()) {
+                    cout << "There are no available contacts to delete.\n";
+                } else {
+                    string id;
+                    cout << "Enter Contact ID to delete: ";
+                    cin >> id;
+                    manager.deleteContact(id);
+                }
+                break;
+            case 5:
+                if (manager.isEmpty())
+                {
+                    cout << "No contacts available to search. " << endl;
+                } else {
+                    manager.searchContact();
+                }
+                break;
+            case 6:
+                manager.filterContacts();
+                break;
+            case 7: {
+                if (manager.isEmpty()) {
+                    cout << "No contacts available to sort. " << endl;
+                } else {    
+                    vector<Contact> contacts;
+                    SortContacts sorting;
+                    SortByNameAscending nameAsc;
+                    SortByNameDescending nameDesc;
+                    SortByAgeAscending ageAsc;
+                    SortByAgeDescending ageDesc;
+                    SortByIdAscending idAsc;
+                    SortByIdDescending idDesc;
+                    SortByEmailAscending emailAsc;
+                    SortByEmailDescending emailDesc;
+                    int sortOption, order;
+                    do {
+                        cout << "[1] Sort By Name " << endl;
+                        cout << "[2] Sort By Age " << endl;
+                        cout << "[3] Sort By ID " << endl;
+                        cout << "[4] Sort By Email " << endl;
+                        cout << "Enter your choice: ";
+                        cin >> sortOption;
+                        if (cin.fail() || sortOption <= 0 || sortOption >= 5){
+                            cin.clear();
+                            cin.ignore(512, '\n');
+                            cout << "Invalid Input. Please Try Again\n" << endl;
+                        }
+                        } while (sortOption <= 0 || sortOption >= 5);
+
+                        do {
                             cout << "Do you want to sort in:" << endl;
                             cout << "[1] Ascending Order " << endl;
                             cout << "[2] Descending Order " << endl;
                             cout << "Enter sorting order: ";
                             cin >> order;
+                            if (cin.fail() || order <= 0 || order >= 3){
+                                cin.clear();
+                                cin.ignore(512, '\n');
+                                cout << "Invalid Input. Please Try Again\n" << endl;
+                              }
+                            } while (order <= 0 || order >= 3);
 
                             if (sortOption == 1 && order == 1) {
                                 sorting.setStrategy(nameAsc);
@@ -771,50 +999,75 @@ int main() {
                                 sorting.setStrategy(idAsc);
                             } else if (sortOption == 3 && order == 2) {
                                 sorting.setStrategy(idDesc);
+                            } else if (sortOption == 4 && order == 1) {
+                                sorting.setStrategy(emailAsc);
+                            } else if (sortOption == 4 && order == 2) {
+                                sorting.setStrategy(emailDesc);
                             } else {
                                 cout << "invalid input! please try again. " << endl;
                             }
 
                             sorting.sort(manager.contacts);
                             manager.viewContacts();
+                        }   
                             break;
-                        }
-                        case 8: {
-                            string id, newCategory;
-                            cout << "Enter Contact ID to update the group: ";
-                            cin >> id;
-                            cout << "Enter the new group/category (Family, Friend, Manager, Client, Vendor): ";
-                            cin >> newCategory;
-                            manager.updateContactCategory(id, newCategory);
-                            break;
-                        }
-                        case 9:
-                            cout << "Logging out...\n";
-                            break;
-                        default:
-                            cout << "Invalid option. Please try again.\n";
-                    }
-                } else {
-                    switch (choice) {
-                        case 1:
-                            manager.viewContacts();
-                            break;
-                        case 2:
-                            manager.searchContact();
-                            break;
-                        case 3:
-                            manager.filterContacts();
-                            break;
-                        case 4:
-                            cout << "Logging out...\n";
-                            break;
-                        default:
-                            cout << "Invalid option. Please try again.\n";
-                    }
-                }
-            } catch (const exception& e) {
-                cout << "An error occurred: " << e.what() << endl;
             }
+
+            case 8: {
+                if (manager.contacts.empty()) {
+                    cout << "There are no available contacts in the system.\n";
+                } else {
+                    string id, newCategory;
+                    cout << "Enter Contact ID to update the group: ";
+                    cin >> id;
+
+                    cout << "Enter the new group/category (Family, Friend, Manager, Client, Vendor): ";
+                    cin >> newCategory;
+                    while (toLower(newCategory) != "family" && toLower(newCategory) != "friend" &&
+                           toLower(newCategory) != "manager" && toLower(newCategory) != "client" &&
+                           toLower(newCategory) != "vendor") {
+                        cout << "Invalid category! Please enter 'Family', 'Friend', 'Manager', 'Client', or 'Vendor': ";
+                        cin >> newCategory;
+                    }
+                    manager.updateContactCategory(id, newCategory);
+                }
+                break;
+            }
+            case 9:
+                cout << "Logging out...\n";
+                break;
+            default:
+                cout << "Invalid option. Please try again.\n";
+                break;
+        }
+    } else {
+        switch (choice) {
+            case 1:
+                manager.viewContacts();
+                break;
+            case 2:
+                if (manager.isEmpty())
+                {
+                    cout << "No contacts available to search. " << endl;
+                } else {
+                    manager.searchContact();
+                }
+                break;
+            case 3:
+                manager.filterContacts();
+                break;
+            case 4:
+                cout << "Logging out...\n";
+                break;
+            default:
+                cout << "Invalid option. Please try again.\n";
+                break;
+        }
+    }
+} catch (const exception& e) {
+    cout << "An error occurred: " << e.what() << endl;
+}
+
         } while ((role == "User" && choice != 9) || (role == "Guest" && choice != 4));
     }
 
