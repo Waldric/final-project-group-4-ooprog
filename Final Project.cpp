@@ -388,48 +388,52 @@ bool isValidId(const string& id) {
                         }
                         case 5: {
                             string newEmergencyContact;
-                            do {
-                                cout << "Enter new Emergency Contact: ";
-                                getline(cin, newEmergencyContact);
-                                if (newEmergencyContact.empty()) {
-                                    cout << "Emergency Contact cannot be empty. Try again.\n";
-                                }
-                            } while (newEmergencyContact.empty());
-                            contacts[i].setEmergencyContact(newEmergencyContact);
-                            break;
+                        do {
+                            cout << "Enter new Emergency Contact: ";
+                            getline(cin, newEmergencyContact);
 
-                            while (!isValidNonNegativePhone(newEmergencyContact)) {
+                            if (newEmergencyContact.empty()) {
+                                cout << "Emergency Contact cannot be empty. Try again.\n";
+                            }
+                        } while (newEmergencyContact.empty());
+
+                    while (true) {
+                            if (!isValidNonNegativePhone(newEmergencyContact)) {
                             cout << "Invalid emergency contact number! Please enter a valid non-negative number: ";
                             getline(cin, newEmergencyContact);
-                            if (!isValidPhoneNumber(newEmergencyContact)) {
+                            } else if (!isValidPhoneNumber(newEmergencyContact)) {
                                 cout << "Invalid number! Please enter exactly 11 digits." << endl;
-                            }
+                                cout << "Enter new Emergency Contact: ";
+                                getline(cin, newEmergencyContact);
+                            } else {
+                                break;
                             }
                         }
+                        contacts[i].setEmergencyContact(newEmergencyContact);
+                        break;
+                    }
+
                         case 6: {
                             int newAge;
-                            do {
-                                cout << "Enter your Age: ";
-                                while (true) {
-    
-                                    if (isValidAgeInput(newAge) && newAge > 0 && newAge <= 150) {
-                                        break; 
-                                    } else if (newAge < 1) {
-                                        cout << "Invalid age! Please enter a valid age (positive integer): ";
-                                        cin >> newAge;
-                                    } else if (newAge > 150) {
-                                        cout << "Age must be below 150. Please try again." << endl;
-                                        cout << "Enter your Age: ";
-                                        cin >> newAge; 
+                            cout << "Enter your Age: ";
+                            while (true) {
+                                cin >> newAge;
+
+                                if (cin.fail()) {
+                                    cin.clear();
+                                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                                    cout << "Invalid input! Please enter a valid age (positive integer): ";
+                                } else if (newAge < 1) {
+                                cout << "Invalid age! Please enter a valid age (positive integer): ";
+                                } else if (newAge > 150) {
+                                    cout << "Age must be below 150. Please try again: ";
                                     } else {
-                                        cout << "Invalid input! Please enter a valid age: ";
-                                        cin >> newAge; 
-                                    }
+                                break;
                                 }
-                            } while (!isValidAgeInput(newAge));
-                            contacts[i].setAge(newAge);
+                            }
+                            contacts[i].setAge(newAge); 
                             break;
-                        }
+                        }                   
                         case 7: {
                             string newAddress;
                             do {
@@ -838,22 +842,20 @@ int main() {
                 }
                 cout << "Enter your Age: ";
                 while (true) {
-    
-                    if (isValidAgeInput(age) && age > 0 && age <= 150) {
-                    break; 
-                    } else if (age < 1) {
-                        cout << "Invalid age! Please enter a valid age (positive integer): ";
                     cin >> age;
+
+                    if (cin.fail()) {
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Invalid input! Please enter a valid age (positive integer): ";
+                    } else if (age < 1) {
+                        cout << "Invalid age! Age must be a positive integer. Please try again: ";
                     } else if (age > 150) {
-                        cout << "Age must be below 150. Please try again." << endl;
-                        cout << "Enter your Age: ";
-                        cin >> age; 
+                        cout << "Age must be below 150. Please try again: ";
                     } else {
-                        cout << "Invalid input! Please enter a valid age: ";
-                        cin >> age; 
+                        break;
                     }
                 }
-
                 cin.ignore();
                 
                 do {
